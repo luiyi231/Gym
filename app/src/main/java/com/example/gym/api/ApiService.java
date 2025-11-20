@@ -4,6 +4,9 @@ import com.example.gym.models.Usuario;
 import com.example.gym.models.Ejercicio;
 import com.example.gym.models.Rutina;
 import com.example.gym.models.RutinaResponse;
+// --- IMPORTANTE: Faltaba esta línea ---
+import com.example.gym.models.RutinaEjercicio;
+
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -33,11 +36,19 @@ public interface ApiService {
     @GET("rutina")
     Call<List<Rutina>> getRutinas();
 
+    @POST("rutina")
+    Call<Rutina> createRutina(@Body Rutina rutina);
+
+    @PUT("rutina/{id}")
+    Call<Void> updateRutina(@Path("id") int id, @Body Rutina rutina);
+
+    @DELETE("rutina/{id}")
+    Call<Void> deleteRutina(@Path("id") int id);
+
     // --- EJERCICIOS ---
     @GET("ejercicio")
     Call<List<Ejercicio>> getEjercicios();
 
-    // Agrega esto en tu interfaz ApiService, debajo de los gets de ejercicio
     @POST("ejercicio")
     Call<Ejercicio> createEjercicio(@Body Ejercicio ejercicio);
 
@@ -50,5 +61,10 @@ public interface ApiService {
     @GET("RutinaEjercicio/Rutina/{rutinaId}")
     Call<RutinaResponse> getRutinaEjercicios(@Path("rutinaId") int rutinaId);
 
+    // --- TABLA INTERMEDIA ---
+    @POST("RutinaEjercicio")
+    Call<Void> addRutinaEjercicio(@Body RutinaEjercicio relacion);
 
+    @DELETE("RutinaEjercicio")
+    Call<Void> deleteRutinaEjercicio(@Body RutinaEjercicio relacion);
 }

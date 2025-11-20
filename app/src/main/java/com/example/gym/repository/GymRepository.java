@@ -284,6 +284,59 @@ public class GymRepository {
             Log.d(TAG, "Sin conexión, usando datos de SQLite para rutinas");
         }
     }
+    public void createRutina(Rutina rutina, final DataCallback<Boolean> callback) {
+        if (NetworkUtils.isNetworkAvailable(context)) {
+            apiService.createRutina(rutina).enqueue(new Callback<Rutina>() {
+                @Override
+                public void onResponse(Call<Rutina> call, Response<Rutina> response) {
+                    if (response.isSuccessful()) callback.onSuccess(true);
+                    else callback.onError("Error al crear rutina: " + response.code());
+                }
+                @Override
+                public void onFailure(Call<Rutina> call, Throwable t) {
+                    callback.onError("Fallo conexión");
+                }
+            });
+        } else {
+            callback.onError("Requiere internet");
+        }
+    }
+
+    public void updateRutina(int id, Rutina rutina, final DataCallback<Boolean> callback) {
+        if (NetworkUtils.isNetworkAvailable(context)) {
+            apiService.updateRutina(id, rutina).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) callback.onSuccess(true);
+                    else callback.onError("Error al actualizar");
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    callback.onError("Fallo conexión");
+                }
+            });
+        } else {
+            callback.onError("Requiere internet");
+        }
+    }
+
+    public void deleteRutina(int id, final DataCallback<Boolean> callback) {
+        if (NetworkUtils.isNetworkAvailable(context)) {
+            apiService.deleteRutina(id).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) callback.onSuccess(true);
+                    else callback.onError("Error al eliminar");
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    callback.onError("Fallo conexión");
+                }
+            });
+        } else {
+            callback.onError("Requiere internet");
+        }
+    }
 
     // Método para obtener ejercicios de una rutina específica
     public void getRutinaEjercicios(int rutinaId, DataCallback<RutinaResponse> callback) {
@@ -369,6 +422,25 @@ public class GymRepository {
                 callback.onError("Rutina no encontrada");
             }
             Log.d(TAG, "Sin conexión, usando datos de SQLite para RutinaEjercicios");
+        }
+    }
+    public void addEjercicioToRutina(int rutinaId, int ejercicioId, final DataCallback<Boolean> callback) {
+        RutinaEjercicio relacion = new RutinaEjercicio(rutinaId, ejercicioId);
+
+        if (NetworkUtils.isNetworkAvailable(context)) {
+            apiService.addRutinaEjercicio(relacion).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) callback.onSuccess(true);
+                    else callback.onError("Error al vincular ejercicio");
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    callback.onError("Fallo conexión: " + t.getMessage());
+                }
+            });
+        } else {
+            callback.onError("Requiere internet");
         }
     }
 }
