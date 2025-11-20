@@ -4,7 +4,6 @@ import com.example.gym.models.Usuario;
 import com.example.gym.models.Ejercicio;
 import com.example.gym.models.Rutina;
 import com.example.gym.models.RutinaResponse;
-// --- IMPORTANTE: Faltaba esta línea ---
 import com.example.gym.models.RutinaEjercicio;
 
 import java.util.List;
@@ -15,6 +14,7 @@ import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
+import retrofit2.http.Query; // Importante importar Query
 
 public interface ApiService {
     String BASE_URL = "http://demomoviluiyi.somee.com/api/v1/";
@@ -61,10 +61,9 @@ public interface ApiService {
     @GET("RutinaEjercicio/Rutina/{rutinaId}")
     Call<RutinaResponse> getRutinaEjercicios(@Path("rutinaId") int rutinaId);
 
-    // --- TABLA INTERMEDIA ---
     @POST("RutinaEjercicio")
     Call<Void> addRutinaEjercicio(@Body RutinaEjercicio relacion);
 
     @DELETE("RutinaEjercicio")
-    Call<Void> deleteRutinaEjercicio(@Body RutinaEjercicio relacion);
+    Call<Void> deleteRutinaEjercicio(@Query("rutinaId") int rutinaId, @Query("ejercicioId") int ejercicioId);
 }

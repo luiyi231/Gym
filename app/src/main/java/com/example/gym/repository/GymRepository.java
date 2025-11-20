@@ -7,7 +7,6 @@ import com.example.gym.api.ApiClient;
 import com.example.gym.api.ApiService;
 import com.example.gym.database.DatabaseHelper;
 import com.example.gym.models.Ejercicio;
-import com.example.gym.models.Rol;
 import com.example.gym.models.Rutina;
 import com.example.gym.models.RutinaEjercicio;
 import com.example.gym.models.RutinaResponse;
@@ -37,63 +36,49 @@ public class GymRepository {
         void onError(String error);
     }
 
-    // Métodos para Usuario
     public void getUsuarios(DataCallback<List<Usuario>> callback) {
         if (NetworkUtils.isNetworkAvailable(context)) {
-            // Online: obtener de API y guardar en SQLite
             apiService.getUsuarios().enqueue(new Callback<List<Usuario>>() {
                 @Override
                 public void onResponse(Call<List<Usuario>> call, Response<List<Usuario>> response) {
                     if (response.isSuccessful() && response.body() != null) {
                         List<Usuario> usuarios = response.body();
-                        // Guardar en SQLite
                         databaseHelper.deleteAllUsuarios();
                         for (Usuario usuario : usuarios) {
                             databaseHelper.insertUsuario(usuario);
                         }
                         callback.onSuccess(usuarios);
-                        Log.d(TAG, "Usuarios obtenidos de API y guardados en SQLite");
                     } else {
-                        // Si falla la API, intentar desde SQLite
-                        List<Usuario> usuarios = databaseHelper.getAllUsuarios();
-                        if (!usuarios.isEmpty()) {
-                            callback.onSuccess(usuarios);
-                            Log.d(TAG, "API falló, usando datos de SQLite");
-                        } else {
-                            callback.onError("Error al obtener usuarios");
-                        }
+                        useLocalUsuarios(callback, "Error API: " + response.code());
                     }
                 }
-
                 @Override
                 public void onFailure(Call<List<Usuario>> call, Throwable t) {
-                    // Si falla la conexión, usar SQLite
-                    List<Usuario> usuarios = databaseHelper.getAllUsuarios();
-                    if (!usuarios.isEmpty()) {
-                        callback.onSuccess(usuarios);
-                        Log.d(TAG, "Conexión falló, usando datos de SQLite");
-                    } else {
-                        callback.onError("Error de conexión: " + t.getMessage());
-                    }
+                    useLocalUsuarios(callback, "Fallo conexión: " + t.getMessage());
                 }
             });
         } else {
-            // Offline: obtener de SQLite
-            List<Usuario> usuarios = databaseHelper.getAllUsuarios();
-            callback.onSuccess(usuarios);
-            Log.d(TAG, "Sin conexión, usando datos de SQLite");
+            useLocalUsuarios(callback, "Modo Offline");
         }
     }
+
+    private void useLocalUsuarios(DataCallback<List<Usuario>> callback, String errorMsg) {
+        List<Usuario> localData = databaseHelper.getAllUsuarios();
+        if (!localData.isEmpty()) {
+            callback.onSuccess(localData);
+            Log.d(TAG, "Usando SQLite Usuarios. Razón: " + errorMsg);
+        } else {
+            callback.onError(errorMsg);
+        }
+    }
+
     public void createUsuario(Usuario usuario, final DataCallback<Boolean> callback) {
         if (NetworkUtils.isNetworkAvailable(context)) {
             apiService.createUsuario(usuario).enqueue(new Callback<Usuario>() {
                 @Override
                 public void onResponse(Call<Usuario> call, Response<Usuario> response) {
-                    if (response.isSuccessful()) {
-                        callback.onSuccess(true);
-                    } else {
-                        callback.onError("Error al crear: " + response.code());
-                    }
+                    if (response.isSuccessful()) callback.onSuccess(true);
+                    else callback.onError("Error al crear: " + response.code());
                 }
                 @Override
                 public void onFailure(Call<Usuario> call, Throwable t) {
@@ -101,55 +86,46 @@ public class GymRepository {
                 }
             });
         } else {
-            callback.onError("No hay conexión a internet");
+            callback.onError("Se requiere internet");
         }
     }
 
-    // Actualizar Usuario
     public void updateUsuario(int id, Usuario usuario, final DataCallback<Boolean> callback) {
         if (NetworkUtils.isNetworkAvailable(context)) {
             apiService.updateUsuario(id, usuario).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
-                    if (response.isSuccessful()) {
-                        callback.onSuccess(true);
-                    } else {
-                        callback.onError("Error al actualizar: " + response.code());
-                    }
+                    if (response.isSuccessful()) callback.onSuccess(true);
+                    else callback.onError("Error al actualizar");
                 }
                 @Override
                 public void onFailure(Call<Void> call, Throwable t) {
-                    callback.onError("Fallo conexión: " + t.getMessage());
+                    callback.onError("Fallo conexión");
                 }
             });
         } else {
-            callback.onError("No hay conexión");
+            callback.onError("Se requiere internet");
         }
     }
 
-    // Eliminar Usuario
     public void deleteUsuario(int id, final DataCallback<Boolean> callback) {
         if (NetworkUtils.isNetworkAvailable(context)) {
             apiService.deleteUsuario(id).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
-                    if (response.isSuccessful()) {
-                        callback.onSuccess(true);
-                    } else {
-                        callback.onError("Error al eliminar: " + response.code());
-                    }
+                    if (response.isSuccessful()) callback.onSuccess(true);
+                    else callback.onError("Error al eliminar");
                 }
                 @Override
                 public void onFailure(Call<Void> call, Throwable t) {
-                    callback.onError("Fallo conexión: " + t.getMessage());
+                    callback.onError("Fallo conexión");
                 }
             });
         } else {
-            callback.onError("No hay conexión");
+            callback.onError("Se requiere internet");
         }
     }
 
-    // Métodos para Ejercicio
     public void getEjercicios(DataCallback<List<Ejercicio>> callback) {
         if (NetworkUtils.isNetworkAvailable(context)) {
             apiService.getEjercicios().enqueue(new Callback<List<Ejercicio>>() {
@@ -158,37 +134,30 @@ public class GymRepository {
                     if (response.isSuccessful() && response.body() != null) {
                         List<Ejercicio> ejercicios = response.body();
                         databaseHelper.deleteAllEjercicios();
-                        for (Ejercicio ejercicio : ejercicios) {
-                            databaseHelper.insertEjercicio(ejercicio);
+                        for (Ejercicio e : ejercicios) {
+                            databaseHelper.insertEjercicio(e);
                         }
                         callback.onSuccess(ejercicios);
-                        Log.d(TAG, "Ejercicios obtenidos de API y guardados en SQLite");
                     } else {
-                        List<Ejercicio> ejercicios = databaseHelper.getAllEjercicios();
-                        if (!ejercicios.isEmpty()) {
-                            callback.onSuccess(ejercicios);
-                        } else {
-                            callback.onError("Error al obtener ejercicios");
-                        }
+                        useLocalEjercicios(callback, "Error API Ejercicios");
                     }
                 }
-
                 @Override
                 public void onFailure(Call<List<Ejercicio>> call, Throwable t) {
-                    List<Ejercicio> ejercicios = databaseHelper.getAllEjercicios();
-                    if (!ejercicios.isEmpty()) {
-                        callback.onSuccess(ejercicios);
-                    } else {
-                        callback.onError("Error de conexión: " + t.getMessage());
-                    }
+                    useLocalEjercicios(callback, "Fallo conexión");
                 }
             });
         } else {
-            List<Ejercicio> ejercicios = databaseHelper.getAllEjercicios();
-            callback.onSuccess(ejercicios);
-            Log.d(TAG, "Sin conexión, usando datos de SQLite para ejercicios");
+            useLocalEjercicios(callback, "Modo Offline");
         }
     }
+
+    private void useLocalEjercicios(DataCallback<List<Ejercicio>> callback, String errorMsg) {
+        List<Ejercicio> localData = databaseHelper.getAllEjercicios();
+        if (!localData.isEmpty()) callback.onSuccess(localData);
+        else callback.onError(errorMsg);
+    }
+
     public void createEjercicio(Ejercicio ejercicio, final DataCallback<Boolean> callback) {
         if (NetworkUtils.isNetworkAvailable(context)) {
             apiService.createEjercicio(ejercicio).enqueue(new Callback<Ejercicio>() {
@@ -203,7 +172,7 @@ public class GymRepository {
                 }
             });
         } else {
-            callback.onError("Se requiere internet para crear");
+            callback.onError("Se requiere internet");
         }
     }
 
@@ -221,7 +190,7 @@ public class GymRepository {
                 }
             });
         } else {
-            callback.onError("Se requiere internet para editar");
+            callback.onError("Se requiere internet");
         }
     }
 
@@ -239,11 +208,10 @@ public class GymRepository {
                 }
             });
         } else {
-            callback.onError("Se requiere internet para eliminar");
+            callback.onError("Se requiere internet");
         }
     }
 
-    // Métodos para Rutina
     public void getRutinas(DataCallback<List<Rutina>> callback) {
         if (NetworkUtils.isNetworkAvailable(context)) {
             apiService.getRutinas().enqueue(new Callback<List<Rutina>>() {
@@ -252,38 +220,30 @@ public class GymRepository {
                     if (response.isSuccessful() && response.body() != null) {
                         List<Rutina> rutinas = response.body();
                         databaseHelper.deleteAllRutinas();
-                        databaseHelper.deleteAllRutinaEjercicios();
-                        for (Rutina rutina : rutinas) {
-                            databaseHelper.insertRutina(rutina);
+                        for (Rutina r : rutinas) {
+                            databaseHelper.insertRutina(r);
                         }
                         callback.onSuccess(rutinas);
-                        Log.d(TAG, "Rutinas obtenidas de API y guardadas en SQLite");
                     } else {
-                        List<Rutina> rutinas = databaseHelper.getAllRutinas();
-                        if (!rutinas.isEmpty()) {
-                            callback.onSuccess(rutinas);
-                        } else {
-                            callback.onError("Error al obtener rutinas");
-                        }
+                        useLocalRutinas(callback, "Error API Rutinas");
                     }
                 }
-
                 @Override
                 public void onFailure(Call<List<Rutina>> call, Throwable t) {
-                    List<Rutina> rutinas = databaseHelper.getAllRutinas();
-                    if (!rutinas.isEmpty()) {
-                        callback.onSuccess(rutinas);
-                    } else {
-                        callback.onError("Error de conexión: " + t.getMessage());
-                    }
+                    useLocalRutinas(callback, "Fallo conexión");
                 }
             });
         } else {
-            List<Rutina> rutinas = databaseHelper.getAllRutinas();
-            callback.onSuccess(rutinas);
-            Log.d(TAG, "Sin conexión, usando datos de SQLite para rutinas");
+            useLocalRutinas(callback, "Modo Offline");
         }
     }
+
+    private void useLocalRutinas(DataCallback<List<Rutina>> callback, String errorMsg) {
+        List<Rutina> localData = databaseHelper.getAllRutinas();
+        if (!localData.isEmpty()) callback.onSuccess(localData);
+        else callback.onError(errorMsg);
+    }
+
     public void createRutina(Rutina rutina, final DataCallback<Boolean> callback) {
         if (NetworkUtils.isNetworkAvailable(context)) {
             apiService.createRutina(rutina).enqueue(new Callback<Rutina>() {
@@ -338,92 +298,71 @@ public class GymRepository {
         }
     }
 
-    // Método para obtener ejercicios de una rutina específica
     public void getRutinaEjercicios(int rutinaId, DataCallback<RutinaResponse> callback) {
         if (NetworkUtils.isNetworkAvailable(context)) {
             apiService.getRutinaEjercicios(rutinaId).enqueue(new Callback<RutinaResponse>() {
                 @Override
                 public void onResponse(Call<RutinaResponse> call, Response<RutinaResponse> response) {
                     if (response.isSuccessful() && response.body() != null) {
-                        RutinaResponse rutinaResponse = response.body();
-                        // Guardar ejercicios en SQLite
-                        if (rutinaResponse.getEjercicios() != null) {
-                            for (Ejercicio ejercicio : rutinaResponse.getEjercicios()) {
-                                databaseHelper.insertEjercicio(ejercicio);
-                                RutinaEjercicio rutinaEjercicio = new RutinaEjercicio(
-                                        rutinaResponse.getRutinaId(),
-                                        ejercicio.getEjercicioId()
-                                );
-                                databaseHelper.insertRutinaEjercicio(rutinaEjercicio);
+                        RutinaResponse data = response.body();
+
+                        if (data.getEjercicios() != null) {
+                            for (Ejercicio e : data.getEjercicios()) {
+                                RutinaEjercicio re = new RutinaEjercicio(data.getRutinaId(), e.getEjercicioId());
+                                databaseHelper.insertRutinaEjercicio(re);
                             }
                         }
-                        callback.onSuccess(rutinaResponse);
-                        Log.d(TAG, "RutinaEjercicios obtenidos de API");
+                        callback.onSuccess(data);
                     } else {
-                        // Intentar desde SQLite
-                        List<Rutina> rutinas = databaseHelper.getAllRutinas();
-                        Rutina rutina = null;
-                        for (Rutina r : rutinas) {
-                            if (r.getRutinaId() == rutinaId) {
-                                rutina = r;
-                                break;
-                            }
-                        }
-                        if (rutina != null) {
-                            RutinaResponse rutinaResponse = new RutinaResponse();
-                            rutinaResponse.setRutinaId(rutina.getRutinaId());
-                            rutinaResponse.setRutinaNombre(rutina.getRutinaNombre());
-                            rutinaResponse.setEjercicios(rutina.getEjercicios());
-                            callback.onSuccess(rutinaResponse);
+                        Rutina r = getLocalRutinaById(rutinaId);
+                        if (r != null) {
+                            RutinaResponse rr = new RutinaResponse();
+                            rr.setRutinaId(r.getRutinaId());
+                            rr.setRutinaNombre(r.getRutinaNombre());
+                            rr.setEjercicios(r.getEjercicios());
+                            callback.onSuccess(rr);
                         } else {
-                            callback.onError("Error al obtener ejercicios de la rutina");
+                            callback.onError("Error API y sin datos locales");
                         }
                     }
                 }
-
                 @Override
                 public void onFailure(Call<RutinaResponse> call, Throwable t) {
-                    List<Rutina> rutinas = databaseHelper.getAllRutinas();
-                    Rutina rutina = null;
-                    for (Rutina r : rutinas) {
-                        if (r.getRutinaId() == rutinaId) {
-                            rutina = r;
-                            break;
-                        }
-                    }
-                    if (rutina != null) {
-                        RutinaResponse rutinaResponse = new RutinaResponse();
-                        rutinaResponse.setRutinaId(rutina.getRutinaId());
-                        rutinaResponse.setRutinaNombre(rutina.getRutinaNombre());
-                        rutinaResponse.setEjercicios(rutina.getEjercicios());
-                        callback.onSuccess(rutinaResponse);
+                    // Fallback local
+                    Rutina r = getLocalRutinaById(rutinaId);
+                    if (r != null) {
+                        RutinaResponse rr = new RutinaResponse();
+                        rr.setRutinaId(r.getRutinaId());
+                        rr.setRutinaNombre(r.getRutinaNombre());
+                        rr.setEjercicios(r.getEjercicios());
+                        callback.onSuccess(rr);
                     } else {
-                        callback.onError("Error de conexión: " + t.getMessage());
+                        callback.onError("Fallo conexión: " + t.getMessage());
                     }
                 }
             });
         } else {
-            // Offline: obtener de SQLite
-            List<Rutina> rutinas = databaseHelper.getAllRutinas();
-            Rutina rutina = null;
-            for (Rutina r : rutinas) {
-                if (r.getRutinaId() == rutinaId) {
-                    rutina = r;
-                    break;
-                }
-            }
-            if (rutina != null) {
-                RutinaResponse rutinaResponse = new RutinaResponse();
-                rutinaResponse.setRutinaId(rutina.getRutinaId());
-                rutinaResponse.setRutinaNombre(rutina.getRutinaNombre());
-                rutinaResponse.setEjercicios(rutina.getEjercicios());
-                callback.onSuccess(rutinaResponse);
+            Rutina r = getLocalRutinaById(rutinaId);
+            if (r != null) {
+                RutinaResponse rr = new RutinaResponse();
+                rr.setRutinaId(r.getRutinaId());
+                rr.setRutinaNombre(r.getRutinaNombre());
+                rr.setEjercicios(r.getEjercicios());
+                callback.onSuccess(rr);
             } else {
-                callback.onError("Rutina no encontrada");
+                callback.onError("Sin conexión y sin datos locales");
             }
-            Log.d(TAG, "Sin conexión, usando datos de SQLite para RutinaEjercicios");
         }
     }
+
+    private Rutina getLocalRutinaById(int rutinaId) {
+        List<Rutina> rutinas = databaseHelper.getAllRutinas();
+        for (Rutina r : rutinas) {
+            if (r.getRutinaId() == rutinaId) return r;
+        }
+        return null;
+    }
+
     public void addEjercicioToRutina(int rutinaId, int ejercicioId, final DataCallback<Boolean> callback) {
         RutinaEjercicio relacion = new RutinaEjercicio(rutinaId, ejercicioId);
 
@@ -432,7 +371,7 @@ public class GymRepository {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) callback.onSuccess(true);
-                    else callback.onError("Error al vincular ejercicio");
+                    else callback.onError("Error al vincular: " + response.code());
                 }
                 @Override
                 public void onFailure(Call<Void> call, Throwable t) {
@@ -443,5 +382,24 @@ public class GymRepository {
             callback.onError("Requiere internet");
         }
     }
-}
 
+    // Eliminar ejercicio de rutina (Borrar relación)
+    public void removeEjercicioFromRutina(int rutinaId, int ejercicioId, final DataCallback<Boolean> callback) {
+        if (NetworkUtils.isNetworkAvailable(context)) {
+            // Usamos Query params (Delete con URL)
+            apiService.deleteRutinaEjercicio(rutinaId, ejercicioId).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) callback.onSuccess(true);
+                    else callback.onError("Error al eliminar vínculo");
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    callback.onError("Fallo conexión");
+                }
+            });
+        } else {
+            callback.onError("Requiere internet");
+        }
+    }
+}

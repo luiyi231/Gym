@@ -175,7 +175,6 @@ public class MainActivity extends AppCompatActivity {
     private void loadRutinas() {
         recyclerView.setAdapter(rutinaAdapter);
         showLoading(true);
-        // Necesitamos cargar usuarios primero para el Spinner (por si acaso)
         repository.getUsuarios(new GymRepository.DataCallback<List<Usuario>>() {
             @Override
             public void onSuccess(List<Usuario> data) { usuarios = data; }
@@ -220,12 +219,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
-    // ==============================
-    // DIÁLOGOS Y LÓGICA CRUD
-    // ==============================
-
-    // --- USUARIOS ---
     private void showUsuarioDialog(Usuario usuario) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_usuario, null);
@@ -276,9 +269,7 @@ public class MainActivity extends AppCompatActivity {
                 .setNegativeButton("No", null).show();
     }
 
-    // --- RUTINAS ---
     private void showRutinaDialog() {
-        // Verificamos que existan usuarios para asignar la rutina
         if (usuarios.isEmpty()) {
             showToast("Primero debes crear usuarios");
             return;
@@ -290,7 +281,6 @@ public class MainActivity extends AppCompatActivity {
         final EditText etNombre = view.findViewById(R.id.etNombre);
         final Spinner spinner = view.findViewById(R.id.spinnerUsuario);
 
-        // Configurar Spinner con nombres de usuarios
         List<String> nombresUsuarios = new ArrayList<>();
         for (Usuario u : usuarios) {
             nombresUsuarios.add(u.getNombre() + " " + u.getApellido());
@@ -348,7 +338,6 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    // --- EJERCICIOS ---
     private void showEjercicioDialog(Ejercicio ejercicio) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_ejercicio, null);
@@ -437,10 +426,6 @@ public class MainActivity extends AppCompatActivity {
                 .setNegativeButton("Cancelar", null)
                 .show();
     }
-
-    // ==============================
-    // UTILIDADES
-    // ==============================
 
     private void showLoading(boolean show) {
         if (show) {
